@@ -29,7 +29,8 @@ router.get("/", verifyToken, async(req: AuthRequest, res)=>{
     res.status(200).json({cart})
         
     } catch (error) {
-        res.status(404).json({message: "no ha ocurrido algo bien"})
+        console.error("GET /api/cart error:", error);
+        res.status(500).json({message: "Error interno"});
     }
    
 
@@ -37,7 +38,6 @@ router.get("/", verifyToken, async(req: AuthRequest, res)=>{
 router.put("/add", verifyToken, async(req: AuthRequest, res)=>{
     
     try {
-    const email = req.user;
     const user = await(coleccion().findOne({username: req.user}))
     let userId = new ObjectId;
     user ?  userId = user._id : new ObjectId();
@@ -49,22 +49,24 @@ router.put("/add", verifyToken, async(req: AuthRequest, res)=>{
     }
 
     const producto = await coleccion1().findOne({_id: new ObjectId(id)})
+    if(!producto){
+        return res.status(404).json({ message: "el producto no existe" });
+    }
 
+    if(producto.stock < quantity){
+        return res.status(400).json({  message:"Insufficient stock" });
+
+    }
    
     
     const resultado = await coleccion1().updateOne(
         { _id: new ObjectId(id)},
         { $inc: { stock: -quantity } }    // restamos el stock
     );
+   
+    const carroUsu = await coleccion2().findOne({userId})
 
-    const carross = await coleccion2().findOne({userId})
-
-    carross?.items.push()
-    if (resultado.matchedCount === 0) {
-        return res.status(404).json({ message: "Producto no encontrado" });
-    }
-
-
+    carroUsu?.items.push({quantity: quantity, idProducto:  new ObjectId(id)});
     
     res.json({ message: "Stock actualizado correctamente", cart: resultado });
 

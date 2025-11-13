@@ -51,7 +51,7 @@ router.post("/", verifyToken, async (req: AuthRequest, res) => {
             description: description && typeof description === "string" ? description.trim() : "",
             price,
             stock,
-            createdAt: new Date()
+            createdAt: new Date(Date.now())
         };
 
         const result = await coleccion1().insertOne(productToInsert);

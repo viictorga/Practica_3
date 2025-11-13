@@ -1,5 +1,5 @@
 
-import {ObjectId} from "mongodb"
+import {ObjectId, WithId} from "mongodb"
 
 export type Producto = {
     _id?: ObjectId,
@@ -9,10 +9,15 @@ price: Number,
 stock: number,
 createdAt: Date 
 }
+export type Item = {
+    quantity: number,
+    idProducto: ObjectId
+}
 export type Carts = {
     _id: ObjectId
 userId: ObjectId, //(referencia a users), único por usuario
-items: []//Array de objetos 
+items: Item[]
+    //Array de objetos 
 }
 
 export type User = {
