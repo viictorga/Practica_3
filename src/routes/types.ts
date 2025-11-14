@@ -3,9 +3,9 @@ import {ObjectId, WithId} from "mongodb"
 
 export type Producto = {
     _id?: ObjectId,
-name: String, 
-description?: String, 
-price: Number, 
+name: string, 
+description?: string, 
+price: number, 
 stock: number,
 createdAt: Date 
 }

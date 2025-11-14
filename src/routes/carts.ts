@@ -2,8 +2,6 @@ import {Router} from "express";
 import dotenv from "dotenv";
 import {getDB} from "../mongo"
 import { Collection, ObjectId } from "mongodb";
-import jwt from "jsonwebtoken";
-import bcrypt from "bcryptjs";
 import {Producto, Carts, User } from "./types"
 import {AuthRequest, verifyToken} from "../middleware/verifyToken"
 dotenv.config();
@@ -15,16 +13,18 @@ const coleccion1 = () => getDB().collection<Producto>("Products");
 const coleccion2 = () => getDB().collection<Carts>("Carts"); 
 
 
+type UserJwt = {
+    id: string,
+    email:string
+}
+
 router.get("/", verifyToken, async(req: AuthRequest, res)=>{
     try {
-         const username = req.user;
-    const users = await coleccion();
-    const usuFinal = await(users.findOne({username}))
-    const idUsu = usuFinal?._id;
+    const usuario = req.user as UserJwt
+    const userId = new ObjectId(usuario.id);
 
     const carts= await coleccion2();
-
-    const cart = await(carts.findOne({userId: idUsu}))
+    const cart = await(carts.findOne({userId}))
 
     res.status(200).json({cart})
         
@@ -38,10 +38,13 @@ router.get("/", verifyToken, async(req: AuthRequest, res)=>{
 router.put("/add", verifyToken, async(req: AuthRequest, res)=>{
     
     try {
-    const user = await(coleccion().findOne({username: req.user}))
-    let userId = new ObjectId;
-    user ?  userId = user._id : new ObjectId();
-   
+    const usuario = req.user as UserJwt
+    const userId = new ObjectId(usuario.id);
+    
+    if((!req.body.id && !req.body.quantity) || typeof(req.body) !== "object"){
+        return res.status(400).json({ message: "Invalid JSON body" });
+    }
+    
 
     const { id, quantity } = req.body as { id: string, quantity: number };
     if (!id || !quantity || quantity <= 0) {
@@ -50,7 +53,7 @@ router.put("/add", verifyToken, async(req: AuthRequest, res)=>{
 
     const producto = await coleccion1().findOne({_id: new ObjectId(id)})
     if(!producto){
-        return res.status(404).json({ message: "el producto no existe" });
+        return res.status(400).json({ message: "Product not found" });
     }
 
     if(producto.stock < quantity){
@@ -64,19 +67,29 @@ router.put("/add", verifyToken, async(req: AuthRequest, res)=>{
         { $inc: { stock: -quantity } }    // restamos el stock
     );
    
-    const carroUsu = await coleccion2().findOne({userId})
-
-    carroUsu?.items.push({quantity: quantity, idProducto:  new ObjectId(id)});
+   
+    let carrito = await coleccion2().findOne({ userId });
+        if(!carrito){
+            const carritos = {
+                _id: new ObjectId,
+                userId: userId,
+                items: []
+            }
+            await coleccion2().insertOne(carritos)
+        }
+        await coleccion2().updateOne({ userId }, { $push: { items: { idProducto: new ObjectId(id), quantity } } });
     
     res.json({ message: "Stock actualizado correctamente", cart: resultado });
 
     } catch (error) {
         console.error(error);
-        res.status(500).json({ message: "Error al actualizar stock" });
+        res.status(500).json({ message: "Error al actualizar stock y el carrito" });
     }
     
 
 })
+
+
 
 
 

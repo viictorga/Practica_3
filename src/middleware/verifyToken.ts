@@ -11,6 +11,8 @@ export interface AuthRequest extends Request {
 };
 
 
+
+
 export const verifyToken = (req: AuthRequest, res: Response, next: NextFunction):void => {
     const authHeader = req.headers["authorization"];
     const token = authHeader && authHeader.split(" ")[1];

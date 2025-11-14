@@ -16,15 +16,25 @@ const coleccion2 = () => getDB().collection<Carts>("Carts");
 
 
 
-
-router.get("/",async(req, res)=>{
-    const productos= await coleccion1();
-    res.status(200).json({productos})
+router.get("/", async (req,res)=>{
+    try{
+        const productos = await coleccion1().find().toArray();
+        res.status(200).json({productos});
+    }catch(err){
+        console.log("get /api/products error", err);
+        res.status(500).json({message:"error interno"});
+    }
 })
 
 router.post("/", verifyToken, async (req: AuthRequest, res) => {
     try{
-        const { name, description, price, stock } = req.body as Producto;
+        if((!req.body.name && !req.body.price && !req.body.stock && !req.body.description) || typeof(req.body) !== "object"){
+        return res.status(400).json({ message: "Invalid JSON body" });
+    }
+       
+        const { name, price, stock } = req.body as Producto;
+        
+        const description = req.body.description;
 
         if(!name || typeof name !== "string" || name.trim().length === 0){
             return res.status(400).json({message: "Campo 'name' es obligatorio"});
@@ -45,13 +55,14 @@ router.post("/", verifyToken, async (req: AuthRequest, res) => {
         if(stock < 0){
             return res.status(400).json({message: "El 'stock' debe ser >= 0"});
         }
+        console.log(description)
 
         const productToInsert: Producto = {
             name,
-            description: description && typeof description === "string" ? description.trim() : "",
+            description: typeof description === "string" ? description.trim() : "",
             price,
             stock,
-            createdAt: new Date(Date.now())
+            createdAt: new Date()
         };
 
         const result = await coleccion1().insertOne(productToInsert);

@@ -19,6 +19,9 @@ const coleccion = () => getDB().collection<User>("users");
 
 router.post("/register", async (req,res)=>{
     try {
+        if((!req.body.email && !req.body.password && !req.body.username) || typeof(req.body) !== "object"){
+        return res.status(400).json({ message: "Invalid JSON body" });
+    }
         const { username, email, passwordHash} = req.body as User;
 
         if(!username || typeof username !== "string" ){
@@ -39,7 +42,7 @@ router.post("/register", async (req,res)=>{
        
         const users = await coleccion();
 
-        const existing = await(users.find({email})) // esto es como email: email
+        const existing = await(users.findOne({email: email})) // esto es como email: email
 
         if(existing){
             return res.status(409).json({error: "conflict, un usuario ya existe con este email"})
@@ -58,6 +61,9 @@ router.post("/register", async (req,res)=>{
 
 router.post("/login", async(req, res)=>{
     try{
+        if((!req.body.email && !req.body.password) || typeof(req.body) !== "object"){
+        return res.status(400).json({ message: "Invalid JSON body" });
+    }
         const {email, passwordHash} = req.body as User
        
 
@@ -75,23 +81,23 @@ router.post("/login", async(req, res)=>{
 
         const users = coleccion();
 
-        const user = await users.findOne({email});
+        const user = await users.findOne({email: email});
         if(!user) return res.status(404).json({message: "email incorrecto"});
 
         const validPass = await bcrypt.compare(passwordHash, user.passwordHash);
         if(!validPass) return res.status(401).json({message: "contraseña incorrecta"});
 
       
-        const token = jwt.sign({id: user._id?.toString(), email: user.email} as JwtPayload, SECRET as string, {
+        const token = jwt.sign({id: user._id?.toString(), email: user.email}, SECRET as string, {
             expiresIn: "1h"
         });
 
         
 
-        res.status(200).json({ token: token})
+        res.status(200).json({ token: "Bearer " +token})
 
     }catch(err){
-        res.status(404).json({message: err});
+        res.status(500).json({message: err});
     }
 })
 
