@@ -10,9 +10,7 @@ dotenv.config();
 
 const router = Router();
 
-const coleccion = () => getDB().collection<User>("users"); 
 const coleccion1 = () => getDB().collection<Producto>("Products"); 
-const coleccion2 = () => getDB().collection<Carts>("Carts"); 
 
 
 

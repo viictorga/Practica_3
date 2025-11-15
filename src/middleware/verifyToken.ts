@@ -24,7 +24,7 @@ export const verifyToken = (req: AuthRequest, res: Response, next: NextFunction)
 
     jwt.verify(token, SECRET as string, (err, decoded) => {
         if(err){
-            res.status(403).json({ message: "Invalid access token" });
+            res.status(401).json({ message: "Token invalido" });
             return;
         }
         req.user = decoded;

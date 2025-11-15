@@ -53,7 +53,7 @@ router.put("/add", verifyToken, async(req: AuthRequest, res)=>{
 
     const producto = await coleccion1().findOne({_id: new ObjectId(id)})
     if(!producto){
-        return res.status(400).json({ message: "Product not found" });
+        return res.status(404).json({ message: "Product not found" });
     }
 
     if(producto.stock < quantity){
